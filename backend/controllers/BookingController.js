@@ -1,4 +1,5 @@
 import Booking from "../models/Booking.js";
+import mongoose from 'mongoose';
 
 export const createBooking = (async (req, res) => {
     const { 
@@ -11,9 +12,11 @@ export const createBooking = (async (req, res) => {
       } = req.body;
 
       try {
+        // Convert auditoriumId string to ObjectId
+        const auditoriumObjectId = new mongoose.Types.ObjectId(auditoriumId);
        
         const conflictingBooking = await Booking.findOne({
-          auditorium: auditoriumId,
+          auditorium: auditoriumObjectId,
           $or: [
             {
               startDateTime: { $lt: endDateTime },
@@ -31,7 +34,7 @@ export const createBooking = (async (req, res) => {
     
         const newBooking = new Booking({
           user: req.user.id,
-          auditorium: auditoriumId,
+          auditorium: auditoriumObjectId,
           eventName,
           startDateTime,
           endDateTime,
