@@ -9,7 +9,8 @@ import {
   Box,
   Alert
 } from '@mui/material';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext'
+import Navbar from '../components/Navbar';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -40,6 +41,7 @@ const Login = () => {
 
   return (
     <Container maxWidth="sm">
+      <Navbar />
       <Box sx={{ mt: 8 }}>
         <Paper elevation={3} sx={{ p: 4 }}>
           <Typography variant="h4" component="h1" gutterBottom align="center">

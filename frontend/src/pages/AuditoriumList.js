@@ -45,19 +45,6 @@ const AuditoriumList = () => {
 
   return (
     <>
-      <AppBar position="static">
-        <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Auditorium Booking
-          </Typography>
-          <Button color="inherit" onClick={() => navigate('/my-bookings')}>
-            My Bookings
-          </Button>
-          <IconButton color="inherit" onClick={handleLogout}>
-            <LogoutIcon />
-          </IconButton>
-        </Toolbar>
-      </AppBar>
 
       <Container maxWidth="lg" sx={{ mt: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom>
