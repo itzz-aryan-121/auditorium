@@ -9,13 +9,26 @@ import {
   TextField,
   Alert,
   CircularProgress,
-  AppBar,
-  Toolbar,
-  IconButton
+  Card,
+  useTheme,
+  alpha,
+  Fade,
+  Grow,
+  Divider,
+  Chip,
+  Grid,
+  Backdrop
 } from '@mui/material';
-import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
+import {
+  EventAvailable as EventIcon,
+  CalendarToday as CalendarIcon,
+  AccessTime as TimeIcon,
+  Check as CheckIcon,
+  Close as CloseIcon
+} from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { bookings } from '../services/api';
+import { format, parseISO } from 'date-fns';
 
 const NewBooking = () => {
   const navigate = useNavigate();
@@ -24,6 +37,7 @@ const NewBooking = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const theme = useTheme();
 
   useEffect(() => {
     if (!state) {
@@ -62,57 +76,167 @@ const NewBooking = () => {
     return null;
   }
 
+  const formattedDate = format(parseISO(state.date), 'EEEE, MMMM d, yyyy');
+
   return (
-    <>
-     
-
-      <Container maxWidth="sm" sx={{ mt: 4 }}>
-        <Paper elevation={3} sx={{ p: 4 }}>
-          <Typography variant="h4" component="h1" gutterBottom align="center">
-            Confirm Booking
-          </Typography>
-
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
-
-          {success && (
-            <Alert severity="success" sx={{ mb: 2 }}>
-              {success}
-            </Alert>
-          )}
-
-          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
-            <Typography variant="body1" gutterBottom>
-              Date: {state.date}
-            </Typography>
-            <Typography variant="body1" gutterBottom>
-              Time Slot: {state.startTime} - {state.endTime}
-            </Typography>
-
-            <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between' }}>
-              <Button
-                variant="contained"
-                color="primary"
-                type="submit"
-                disabled={loading}
+    <Container maxWidth="sm" sx={{ mt: 5, mb: 5 }}>
+      <Fade in timeout={600}>
+        <Card elevation={3} sx={{ borderRadius: 4, overflow: 'hidden' }}>
+          <Box sx={{ 
+            bgcolor: alpha(theme.palette.primary.main, 0.05), 
+            py: 3,
+            px: 4,
+            borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`
+          }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+              <EventIcon sx={{ mr: 1.5, color: theme.palette.primary.main, fontSize: 28 }} />
+              <Typography 
+                variant="h4" 
+                component="h1" 
+                sx={{ 
+                  fontWeight: 700,
+                  background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent'
+                }}
               >
-                {loading ? <CircularProgress size={24} /> : 'Confirm Booking'}
-              </Button>
-              <Button
-                variant="outlined"
-                onClick={() => navigate(-1)}
-                disabled={loading}
+                Confirm Booking
+              </Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary">
+              Please review and confirm your auditorium booking details
+            </Typography>
+          </Box>
+
+          <Box sx={{ p: 4 }}>
+            {error && (
+              <Grow in timeout={500}>
+                <Alert 
+                  severity="error" 
+                  sx={{ mb: 3 }}
+                  action={
+                    <Button color="inherit" size="small" onClick={() => setError('')}>
+                      Dismiss
+                    </Button>
+                  }
+                >
+                  {error}
+                </Alert>
+              </Grow>
+            )}
+
+            {success && (
+              <Grow in timeout={500}>
+                <Alert 
+                  severity="success" 
+                  sx={{ mb: 3 }}
+                  icon={<CheckIcon fontSize="inherit" />}
+                >
+                  {success}
+                </Alert>
+              </Grow>
+            )}
+
+            <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
+              <Paper 
+                elevation={0} 
+                sx={{ 
+                  p: 3, 
+                  mb: 4, 
+                  bgcolor: alpha(theme.palette.primary.main, 0.03),
+                  borderRadius: 2,
+                  border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`
+                }}
               >
-                Cancel
-              </Button>
+                <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 3 }}>
+                  Booking Details
+                </Typography>
+                
+                <Grid container spacing={2}>
+                  <Grid item xs={12}>
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+                      <CalendarIcon sx={{ mr: 2, color: theme.palette.primary.main, mt: 0.5 }} />
+                      <Box>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                          Date
+                        </Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          {formattedDate}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Grid>
+                  
+                  <Grid item xs={12}>
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                      <TimeIcon sx={{ mr: 2, color: theme.palette.primary.main, mt: 0.5 }} />
+                      <Box>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                          Time Slot
+                        </Typography>
+                        <Chip 
+                          label={`${state.startTime} - ${state.endTime}`} 
+                          sx={{ 
+                            bgcolor: alpha(theme.palette.primary.main, 0.1),
+                            color: theme.palette.primary.dark,
+                            fontWeight: 500,
+                            px: 1
+                          }} 
+                        />
+                      </Box>
+                    </Box>
+                  </Grid>
+                </Grid>
+              </Paper>
+
+              <Divider sx={{ mb: 4 }} />
+
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Button
+                  variant="outlined"
+                  onClick={() => navigate(-1)}
+                  disabled={loading}
+                  startIcon={<CloseIcon />}
+                  sx={{ px: 3 }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  type="submit"
+                  disabled={loading}
+                  startIcon={loading ? null : <CheckIcon />}
+                  sx={{ 
+                    px: 3,
+                    position: 'relative'
+                  }}
+                >
+                  {loading ? 'Processing...' : 'Confirm Booking'}
+                  {loading && (
+                    <CircularProgress 
+                      size={24} 
+                      sx={{ 
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        marginTop: '-12px',
+                        marginLeft: '-12px',
+                      }}
+                    />
+                  )}
+                </Button>
+              </Box>
             </Box>
           </Box>
-        </Paper>
-      </Container>
-    </>
+        </Card>
+      </Fade>
+
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={loading}
+      />
+    </Container>
   );
 };
 

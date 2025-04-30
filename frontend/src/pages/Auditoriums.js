@@ -18,7 +18,7 @@ const Auditoriums = () => {
             Add New Auditorium
           </Button>
         </Box>
-        // ... existing code ...
+       
       </Box>
     </Container>
   );
