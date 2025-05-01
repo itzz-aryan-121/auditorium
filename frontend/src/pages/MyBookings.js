@@ -22,14 +22,25 @@ import {
   Card,
   Tooltip,
   Button,
-  TablePagination
+  TablePagination,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Grid
 } from '@mui/material';
 import {
   Event as EventIcon,
   AccessTime as AccessTimeIcon,
   Room as RoomIcon,
   CalendarToday as CalendarIcon,
-  Refresh as RefreshIcon
+  Refresh as RefreshIcon,
+  Description as DescriptionIcon,
+  HourglassEmpty as PendingIcon,
+  CheckCircle as ApprovedIcon,
+  Cancel as RejectedIcon,
+  Info as InfoIcon,
+  CheckCircle as CheckCircleIcon
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { bookings } from '../services/api';
@@ -51,6 +62,9 @@ const BookingSkeleton = () => (
         <TableCell>
           <Skeleton variant="text" width="70%" height={24} />
         </TableCell>
+        <TableCell>
+          <Skeleton variant="rectangular" width={80} height={24} sx={{ borderRadius: 4 }} />
+        </TableCell>
       </TableRow>
     ))}
   </>
@@ -62,6 +76,8 @@ const MyBookings = () => {
   const [error, setError] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const navigate = useNavigate();
   const theme = useTheme();
 
@@ -98,25 +114,62 @@ const MyBookings = () => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
+  
+  const handleOpenDetails = (booking) => {
+    setSelectedBooking(booking);
+    setDialogOpen(true);
+  };
 
-  const getStatusColor = (date, startTime) => {
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+  };
+
+  const getStatusConfig = (booking) => {
     const now = new Date();
-    const bookingDate = new Date(date);
-    bookingDate.setHours(parseInt(startTime.split(':')[0]), parseInt(startTime.split(':')[1]));
+    const bookingDate = new Date(booking.date);
+    bookingDate.setHours(parseInt(booking.startTime.split(':')[0]), parseInt(booking.startTime.split(':')[1]));
     
-    if (bookingDate < now) {
+    // First check approval status
+    if (booking.status === 'pending') {
       return {
-        bgcolor: alpha(theme.palette.success.main, 0.1),
-        color: theme.palette.success.dark,
-        label: 'Completed'
+        bgcolor: alpha(theme.palette.warning.main, 0.1),
+        color: theme.palette.warning.dark,
+        label: 'Pending Approval',
+        icon: <PendingIcon fontSize="small" />
       };
-    } else {
+    } else if (booking.status === 'rejected') {
       return {
-        bgcolor: alpha(theme.palette.primary.main, 0.1),
-        color: theme.palette.primary.dark,
-        label: 'Upcoming'
+        bgcolor: alpha(theme.palette.error.main, 0.1),
+        color: theme.palette.error.dark,
+        label: 'Rejected',
+        icon: <RejectedIcon fontSize="small" />
       };
+    } else if (booking.status === 'approved') {
+      // For approved bookings, check if they're past or upcoming
+      if (bookingDate < now) {
+        return {
+          bgcolor: alpha(theme.palette.success.main, 0.1),
+          color: theme.palette.success.dark,
+          label: 'Completed',
+          icon: <CheckCircleIcon fontSize="small" />
+        };
+      } else {
+        return {
+          bgcolor: alpha(theme.palette.primary.main, 0.1),
+          color: theme.palette.primary.dark,
+          label: 'Approved',
+          icon: <ApprovedIcon fontSize="small" />
+        };
+      }
     }
+    
+    // Fallback (should not reach here with proper data)
+    return {
+      bgcolor: alpha(theme.palette.grey[500], 0.1),
+      color: theme.palette.grey[800],
+      label: 'Unknown',
+      icon: <InfoIcon fontSize="small" />
+    };
   };
 
   return (
@@ -187,6 +240,7 @@ const MyBookings = () => {
                     <TableCell>Date</TableCell>
                     <TableCell>Time Slot</TableCell>
                     <TableCell>Location</TableCell>
+                    <TableCell>Status</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -239,11 +293,12 @@ const MyBookings = () => {
                   {bookingsList
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                     .map((booking) => {
-                      const statusConfig = getStatusColor(booking.date, booking.startTime);
+                      const statusConfig = getStatusConfig(booking);
                       return (
                         <TableRow 
                           key={booking._id}
                           hover
+                          onClick={() => handleOpenDetails(booking)}
                           sx={{ 
                             '&:nth-of-type(even)': { bgcolor: alpha(theme.palette.primary.main, 0.02) },
                             transition: 'background-color 0.2s',
@@ -282,6 +337,7 @@ const MyBookings = () => {
                           <TableCell>
                             <Chip 
                               size="small"
+                              icon={statusConfig.icon}
                               label={statusConfig.label}
                               sx={{ 
                                 bgcolor: statusConfig.bgcolor,
@@ -309,6 +365,114 @@ const MyBookings = () => {
           </Box>
         )}
       </Card>
+
+      {/* Booking Details Dialog */}
+      <Dialog 
+        open={dialogOpen} 
+        onClose={handleCloseDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        {selectedBooking && (
+          <>
+            <DialogTitle sx={{ 
+              pb: 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1
+            }}>
+              <EventIcon color="primary" />
+              <Typography variant="h6" component="span">
+                Booking Details
+              </Typography>
+            </DialogTitle>
+            <DialogContent dividers>
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                  Status
+                </Typography>
+                <Chip 
+                  icon={getStatusConfig(selectedBooking).icon}
+                  label={getStatusConfig(selectedBooking).label}
+                  sx={{ 
+                    bgcolor: getStatusConfig(selectedBooking).bgcolor,
+                    color: getStatusConfig(selectedBooking).color,
+                    fontWeight: 500
+                  }}
+                />
+                
+                {selectedBooking.status === 'rejected' && selectedBooking.adminComment && (
+                  <Box sx={{ mt: 2, p: 2, bgcolor: alpha(theme.palette.error.main, 0.05), borderRadius: 1 }}>
+                    <Typography variant="subtitle2" color="error" gutterBottom>
+                      Rejection Reason:
+                    </Typography>
+                    <Typography variant="body2">
+                      {selectedBooking.adminComment}
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+              
+              <Grid container spacing={2} sx={{ mb: 3 }}>
+                <Grid item xs={6}>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    Auditorium
+                  </Typography>
+                  <Typography variant="body1" fontWeight={500}>
+                    {selectedBooking.auditoriumId.name}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    Location
+                  </Typography>
+                  <Typography variant="body1">
+                    {selectedBooking.auditoriumId.location}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    Date
+                  </Typography>
+                  <Typography variant="body1">
+                    {format(new Date(selectedBooking.date), 'MMMM d, yyyy')}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    Time
+                  </Typography>
+                  <Typography variant="body1">
+                    {selectedBooking.startTime} - {selectedBooking.endTime}
+                  </Typography>
+                </Grid>
+              </Grid>
+              
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+                  <DescriptionIcon fontSize="small" sx={{ mr: 0.5 }} />
+                  Event Description
+                </Typography>
+                <Paper 
+                  variant="outlined" 
+                  sx={{ 
+                    p: 2, 
+                    bgcolor: alpha(theme.palette.background.default, 0.5),
+                    borderRadius: 1
+                  }}
+                >
+                  <Typography variant="body2">
+                    {selectedBooking.description || "No description provided"}
+                  </Typography>
+                </Paper>
+              </Box>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCloseDialog}>Close</Button>
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
     </Container>
   );
 };

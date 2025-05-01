@@ -22,6 +22,20 @@ const bookingSchema = new mongoose.Schema({
   endTime: {
     type: String,
     required: true
+  },
+  description: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending'
+  },
+  adminComment: {
+    type: String,
+    trim: true
   }
 }, {
   timestamps: true

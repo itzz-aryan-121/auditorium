@@ -17,14 +17,16 @@ import {
   Divider,
   Chip,
   Grid,
-  Backdrop
+  Backdrop,
+  FormHelperText
 } from '@mui/material';
 import {
   EventAvailable as EventIcon,
   CalendarToday as CalendarIcon,
   AccessTime as TimeIcon,
   Check as CheckIcon,
-  Close as CloseIcon
+  Close as CloseIcon,
+  Description as DescriptionIcon
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { bookings } from '../services/api';
@@ -37,6 +39,8 @@ const NewBooking = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [description, setDescription] = useState('');
+  const [descriptionError, setDescriptionError] = useState('');
   const theme = useTheme();
 
   useEffect(() => {
@@ -47,6 +51,18 @@ const NewBooking = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate description
+    if (!description.trim()) {
+      setDescriptionError('Please provide a description for your booking request');
+      return;
+    } else if (description.length < 10) {
+      setDescriptionError('Description should be at least 10 characters long');
+      return;
+    } else {
+      setDescriptionError('');
+    }
+    
     setLoading(true);
     setError('');
     setSuccess('');
@@ -56,11 +72,12 @@ const NewBooking = () => {
         auditoriumId: state.auditoriumId,
         date: state.date,
         startTime: state.startTime,
-        endTime: state.endTime
+        endTime: state.endTime,
+        description
       });
 
       if (response.data) {
-        setSuccess('Booking created successfully!');
+        setSuccess('Booking request submitted successfully! Admin will review your request.');
         setTimeout(() => {
           navigate('/my-bookings');
         }, 2000);
@@ -104,7 +121,7 @@ const NewBooking = () => {
               </Typography>
             </Box>
             <Typography variant="body2" color="text.secondary">
-              Please review and confirm your auditorium booking details
+              Please provide details and confirm your auditorium booking request
             </Typography>
           </Box>
 
@@ -168,7 +185,7 @@ const NewBooking = () => {
                   </Grid>
                   
                   <Grid item xs={12}>
-                    <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 3 }}>
                       <TimeIcon sx={{ mr: 2, color: theme.palette.primary.main, mt: 0.5 }} />
                       <Box>
                         <Typography variant="subtitle2" color="text.secondary" gutterBottom>
@@ -183,6 +200,40 @@ const NewBooking = () => {
                             px: 1
                           }} 
                         />
+                      </Box>
+                    </Box>
+                  </Grid>
+                  
+                  <Grid item xs={12}>
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                      <DescriptionIcon sx={{ mr: 2, color: theme.palette.primary.main, mt: 0.5 }} />
+                      <Box sx={{ width: '100%' }}>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                          Event Description
+                        </Typography>
+                        <TextField
+                          fullWidth
+                          multiline
+                          rows={4}
+                          placeholder="Describe your event purpose, expected attendees, and any special requirements..."
+                          variant="outlined"
+                          value={description}
+                          onChange={(e) => setDescription(e.target.value)}
+                          error={!!descriptionError}
+                          disabled={loading}
+                          sx={{ 
+                            bgcolor: 'background.paper',
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: 2,
+                            }
+                          }}
+                        />
+                        {descriptionError && (
+                          <FormHelperText error>{descriptionError}</FormHelperText>
+                        )}
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                          Your booking request will be reviewed by an administrator. Please provide a clear description.
+                        </Typography>
                       </Box>
                     </Box>
                   </Grid>
@@ -212,7 +263,7 @@ const NewBooking = () => {
                     position: 'relative'
                   }}
                 >
-                  {loading ? 'Processing...' : 'Confirm Booking'}
+                  {loading ? 'Processing...' : 'Submit Request'}
                   {loading && (
                     <CircularProgress 
                       size={24} 

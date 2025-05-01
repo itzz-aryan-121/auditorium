@@ -13,6 +13,7 @@ import Register from './pages/Register';
 import AuditoriumList from './pages/AuditoriumList';
 import Availability from './pages/Availability';
 import MyBookings from './pages/MyBookings';
+import AdminBookings from './pages/AdminBookings';
 
 // Create theme
 // Enhanced theme with modern UI elements
@@ -198,10 +199,17 @@ const theme = createTheme({
     },
   },
 });
+
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
   const { user } = useAuth();
   return user ? children : <Navigate to="/login" />;
+};
+
+// Admin Route component
+const AdminRoute = ({ children }) => {
+  const { user } = useAuth();
+  return user && user.isAdmin ? children : <Navigate to="/" />;
 };
 
 function App() {
@@ -245,6 +253,14 @@ function App() {
                 <ProtectedRoute>
                   <NewBooking />
                 </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/bookings"
+              element={
+                <AdminRoute>
+                  <AdminBookings />
+                </AdminRoute>
               }
             />
           </Routes>

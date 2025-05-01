@@ -29,7 +29,8 @@ import {
   CalendarMonth as CalendarIcon,
   Dashboard as DashboardIcon,
   Add as AddIcon,
-  Notifications as NotificationsIcon
+  Notifications as NotificationsIcon,
+  AdminPanelSettings as AdminIcon
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 
@@ -308,6 +309,26 @@ const Navbar = () => {
                       Add Auditorium
                     </MenuItem>
                   )}
+                  {user && user.isAdmin && (
+                    <MenuItem 
+                      onClick={() => { navigate('/admin/bookings'); handleMenuClose(); }}
+                      sx={{ 
+                        py: 1.5,
+                        color: isActive('/admin/bookings') ? theme.palette.primary.main : 'inherit',
+                        fontWeight: isActive('/admin/bookings') ? 600 : 400,
+                        transition: 'all 0.2s',
+                        '&:hover': {
+                          bgcolor: alpha(theme.palette.primary.main, 0.05),
+                          transform: 'translateX(5px)'
+                        }
+                      }}
+                    >
+                      <ListItemIcon>
+                        <AdminIcon color={isActive('/admin/bookings') ? "primary" : "inherit"} fontSize="small" />
+                      </ListItemIcon>
+                      Admin Panel
+                    </MenuItem>
+                  )}
                   <Divider sx={{ my: 1 }} />
                   
                   {/* User info section */}
@@ -400,6 +421,27 @@ const Navbar = () => {
                     startIcon={<AddIcon />}
                   >
                     Add New
+                  </Button>
+                )}
+                
+                {user && user.isAdmin && (
+                  <Button
+                    color="inherit"
+                    onClick={() => navigate('/admin/bookings')}
+                    sx={{ 
+                      fontWeight: isActive('/admin/bookings') ? 600 : 500,
+                      color: isActive('/admin/bookings') ? theme.palette.primary.main : 'inherit',
+                      backgroundColor: isActive('/admin/bookings') ? alpha(theme.palette.primary.main, 0.08) : 'transparent',
+                      '&:hover': { 
+                        backgroundColor: isActive('/admin/bookings') ? alpha(theme.palette.primary.main, 0.12) : alpha(theme.palette.primary.main, 0.05),
+                        transform: 'translateY(-2px)'
+                      },
+                      transition: 'all 0.2s',
+                      borderRadius: 2
+                    }}
+                    startIcon={<AdminIcon />}
+                  >
+                    Admin
                   </Button>
                 )}
                 
