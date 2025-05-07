@@ -30,9 +30,12 @@ import {
   Dashboard as DashboardIcon,
   Add as AddIcon,
   Notifications as NotificationsIcon,
-  AdminPanelSettings as AdminIcon
+  AdminPanelSettings as AdminIcon,
+  Brightness4 as Brightness4Icon,
+  Brightness7 as Brightness7Icon
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
+import { useThemeMode } from '../context/ThemeContext';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -44,6 +47,7 @@ const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
   const [notificationAnchor, setNotificationAnchor] = useState(null);
+  const { mode, toggleTheme } = useThemeMode();
   
   // Handle scroll effect for navbar
   useEffect(() => {
@@ -329,6 +333,32 @@ const Navbar = () => {
                       Admin Panel
                     </MenuItem>
                   )}
+                  {user && user.isAdmin && (
+                    <MenuItem 
+                      onClick={() => { navigate('/admin/dashboard'); handleMenuClose(); }}
+                      sx={{ 
+                        py: 1.5,
+                        color: isActive('/admin/dashboard') ? theme.palette.primary.main : 'inherit',
+                        fontWeight: isActive('/admin/dashboard') ? 600 : 400,
+                        transition: 'all 0.2s',
+                        '&:hover': {
+                          bgcolor: alpha(theme.palette.primary.main, 0.05),
+                          transform: 'translateX(5px)'
+                        }
+                      }}
+                    >
+                      <ListItemIcon>
+                        <DashboardIcon color={isActive('/admin/dashboard') ? 'primary' : 'inherit'} fontSize="small" />
+                      </ListItemIcon>
+                      Dashboard
+                    </MenuItem>
+                  )}
+                  <MenuItem onClick={toggleTheme} sx={{ py: 1.5 }}>
+                    <ListItemIcon>
+                      {mode === 'dark' ? <Brightness7Icon fontSize="small" /> : <Brightness4Icon fontSize="small" />}
+                    </ListItemIcon>
+                    {mode === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                  </MenuItem>
                   <Divider sx={{ my: 1 }} />
                   
                   {/* User info section */}
@@ -345,6 +375,14 @@ const Navbar = () => {
                   </Box>
                   <Divider sx={{ my: 1 }} />
                   
+                  {user && (
+                    <MenuItem onClick={() => { navigate('/profile'); handleMenuClose(); }} sx={{ py: 1.5 }}>
+                      <ListItemIcon>
+                        <PersonIcon fontSize="small" />
+                      </ListItemIcon>
+                      Profile
+                    </MenuItem>
+                  )}
                   <MenuItem 
                     onClick={handleLogout} 
                     sx={{ 
@@ -445,7 +483,32 @@ const Navbar = () => {
                   </Button>
                 )}
                 
+                {user && user.isAdmin && (
+                  <Button
+                    color="inherit"
+                    onClick={() => navigate('/admin/dashboard')}
+                    sx={{ 
+                      fontWeight: isActive('/admin/dashboard') ? 600 : 500,
+                      color: isActive('/admin/dashboard') ? theme.palette.primary.main : 'inherit',
+                      backgroundColor: isActive('/admin/dashboard') ? alpha(theme.palette.primary.main, 0.08) : 'transparent',
+                      '&:hover': { 
+                        backgroundColor: isActive('/admin/dashboard') ? alpha(theme.palette.primary.main, 0.12) : alpha(theme.palette.primary.main, 0.05),
+                        transform: 'translateY(-2px)'
+                      },
+                      transition: 'all 0.2s',
+                      borderRadius: 2
+                    }}
+                    startIcon={<DashboardIcon />}
+                  >
+                    Dashboard
+                  </Button>
+                )}
+                
                 <Box sx={{ ml: 1 }}>
+                  <IconButton onClick={toggleTheme} color="inherit" sx={{ ml: 1 }}>
+                    {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+                  </IconButton>
+                  
                   <Tooltip title="Notifications">
                     <IconButton 
                       onClick={handleNotificationOpen}
@@ -544,6 +607,14 @@ const Navbar = () => {
                     </Typography>
                   </Box>
                   <Divider />
+                  {user && (
+                    <MenuItem onClick={() => { navigate('/profile'); handleUserMenuClose(); }}>
+                      <ListItemIcon>
+                        <PersonIcon fontSize="small" />
+                      </ListItemIcon>
+                      Profile
+                    </MenuItem>
+                  )}
                   <MenuItem 
                     onClick={handleLogout} 
                     sx={{ 

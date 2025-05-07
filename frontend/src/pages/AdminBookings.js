@@ -53,6 +53,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { bookings } from '../services/api';
 import { format, parseISO } from 'date-fns';
+import { useNotifications } from '../context/NotificationContext';
 
 const BookingSkeleton = () => (
   <>
@@ -100,6 +101,7 @@ const AdminBookings = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const theme = useTheme();
+  const { addNotification } = useNotifications();
 
   useEffect(() => {
     // Debug logs
@@ -252,6 +254,12 @@ const AdminBookings = () => {
       setSelectedBooking(updatedBooking);
       setActionSuccess(`Booking ${status === 'approved' ? 'approved' : 'rejected'} successfully!`);
       
+      if (status === 'approved') {
+        addNotification({ message: 'Booking approved!', severity: 'success' });
+      } else if (status === 'rejected') {
+        addNotification({ message: 'Booking rejected.', severity: 'error' });
+      }
+      
       // Close dialog after a short delay
       if (status === 'approved') {
         setTimeout(() => {
@@ -273,6 +281,7 @@ const AdminBookings = () => {
         const errorMessage = err.response?.data?.message || err.message || 'Unknown error occurred';
         setError('Failed to update booking status: ' + errorMessage);
       }
+      addNotification({ message: 'Failed to update booking status.', severity: 'error' });
     } finally {
       setActionLoading(false);
     }

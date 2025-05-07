@@ -29,6 +29,7 @@ import {
   EventAvailable as EventIcon
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
+import { useNotifications } from '../context/NotificationContext';
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -42,6 +43,7 @@ const Register = () => {
   const { register } = useAuth();
   const navigate = useNavigate();
   const theme = useTheme();
+  const { addNotification } = useNotifications();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -56,12 +58,15 @@ const Register = () => {
     try {
       const result = await register(name, email, password);
       if (result.success) {
+        addNotification({ message: 'Registration successful!', severity: 'success' });
         navigate('/');
       } else {
         setError(result.message);
+        addNotification({ message: result.message || 'Registration failed.', severity: 'error' });
       }
     } catch (err) {
       setError('Failed to register');
+      addNotification({ message: 'Failed to register', severity: 'error' });
     }
 
     setLoading(false);

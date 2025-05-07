@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { ThemeProvider } from './context/ThemeContext';
 import CssBaseline from '@mui/material/CssBaseline';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
@@ -14,10 +14,62 @@ import AuditoriumList from './pages/AuditoriumList';
 import Availability from './pages/Availability';
 import MyBookings from './pages/MyBookings';
 import AdminBookings from './pages/AdminBookings';
+import { NotificationProvider } from './context/NotificationContext';
+import NotificationBell from './components/NotificationBell';
+import NotificationToast from './components/NotificationToast';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminCalendar from './pages/AdminCalendar';
+import Profile from './pages/Profile';
+
+// WebSocket handler to fix the connection issues
+const fixWebSocketIssue = () => {
+  // Store the original WebSocket constructor
+  const OriginalWebSocket = window.WebSocket;
+  
+  // Replace the WebSocket constructor with our custom one
+  window.WebSocket = function(url, protocols) {
+    // Check if this is the problematic URL
+    if (url.includes('localhost:3000/ws')) {
+      console.warn('Intercepted WebSocket connection to localhost:3000/ws');
+      
+      // Redirect to the correct WebSocket server if needed
+      if (process.env.REACT_APP_WS_URL) {
+        console.log(`Redirecting to ${process.env.REACT_APP_WS_URL}`);
+        return new OriginalWebSocket(process.env.REACT_APP_WS_URL, protocols);
+      }
+      
+      // If no redirect URL, return a mock WebSocket that does nothing but doesn't error
+      console.log('Using mock WebSocket (no connection will be made)');
+      return {
+        send: () => {},
+        close: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        onopen: null,
+        onclose: null,
+        onerror: null,
+        onmessage: null,
+        readyState: 3, // CLOSED
+      };
+    }
+    
+    // For other URLs, use the original WebSocket
+    return new OriginalWebSocket(url, protocols);
+  };
+  
+  // Copy all static properties from the original WebSocket
+  for (const prop in OriginalWebSocket) {
+    if (OriginalWebSocket.hasOwnProperty(prop)) {
+      window.WebSocket[prop] = OriginalWebSocket[prop];
+    }
+  }
+  
+  console.log('WebSocket handler installed');
+};
 
 // Create theme
 // Enhanced theme with modern UI elements
-const theme = createTheme({
+const theme = {
   typography: {
     fontFamily: '"Poppins", "Roboto", "Helvetica", "Arial", sans-serif',
     h1: {
@@ -198,7 +250,7 @@ const theme = createTheme({
       },
     },
   },
-});
+};
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
@@ -213,59 +265,97 @@ const AdminRoute = ({ children }) => {
 };
 
 function App() {
+  // Install WebSocket fix when the app loads
+  useEffect(() => {
+    fixWebSocketIssue();
+    
+    // Optional: add environment-based logging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Running in development mode');
+      console.log('API URL:', process.env.REACT_APP_API_URL || 'http://localhost:7001/api');
+    }
+  }, []);
+  
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <AuthProvider>
-        <Router>
-          <Navbar />
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <AuditoriumList />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/auditoriums/:id/availability"
-              element={
-                <ProtectedRoute>
-                  <Availability />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/my-bookings"
-              element={
-                <ProtectedRoute>
-                  <MyBookings />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/auditoriums/add" element={<AddAuditorium />} />
-            <Route
-              path="/bookings/new"
-              element={
-                <ProtectedRoute>
-                  <NewBooking />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/bookings"
-              element={
-                <AdminRoute>
-                  <AdminBookings />
-                </AdminRoute>
-              }
-            />
-          </Routes>
-        </Router>
-      </AuthProvider>
+      <NotificationProvider>
+        <AuthProvider>
+          <Router>
+            <Navbar rightContent={<NotificationBell />} />
+            <NotificationToast />
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <AuditoriumList />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/auditoriums/:id/availability"
+                element={
+                  <ProtectedRoute>
+                    <Availability />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/my-bookings"
+                element={
+                  <ProtectedRoute>
+                    <MyBookings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/auditoriums/add" element={<AddAuditorium />} />
+              <Route
+                path="/bookings/new"
+                element={
+                  <ProtectedRoute>
+                    <NewBooking />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/bookings"
+                element={
+                  <AdminRoute>
+                    <AdminBookings />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/admin/dashboard"
+                element={
+                  <AdminRoute>
+                    <AdminDashboard />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/admin/calendar"
+                element={
+                  <AdminRoute>
+                    <AdminCalendar />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          </Router>
+        </AuthProvider>
+      </NotificationProvider>
     </ThemeProvider>
   );
 }

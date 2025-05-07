@@ -65,7 +65,46 @@ const login = async (req, res) => {
   }
 };
 
+const updateProfile = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { name, profilePic } = req.body;
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (name) user.name = name;
+    if (profilePic !== undefined) user.profilePic = profilePic;
+    await user.save();
+    res.json({
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      isAdmin: user.isAdmin,
+      profilePic: user.profilePic
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+const updatePassword = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { oldPassword, newPassword } = req.body;
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    const isMatch = await user.comparePassword(oldPassword);
+    if (!isMatch) return res.status(400).json({ message: 'Old password is incorrect' });
+    user.password = newPassword;
+    await user.save();
+    res.json({ message: 'Password updated successfully' });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 module.exports = {
   register,
-  login
+  login,
+  updateProfile,
+  updatePassword
 }; 

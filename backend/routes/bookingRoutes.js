@@ -12,10 +12,15 @@ const {
 // User routes
 router.post('/', auth, createBooking);
 router.get('/me', auth, getUserBookings);
-router.get('/:id', auth, getBookingById);
 
-// Admin routes
+// Admin routes - must come before /:id route
 router.get('/admin/all', auth, getAllBookings);
 router.patch('/admin/:id/status', auth, updateBookingStatus);
+
+// Public route for all bookings (for calendar)
+router.get('/', getAllBookings);
+
+// Generic routes
+router.get('/:id', auth, getBookingById);
 
 module.exports = router; 

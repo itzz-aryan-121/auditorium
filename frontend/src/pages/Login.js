@@ -26,6 +26,7 @@ import {
   EventAvailable as EventIcon
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
+import { useNotifications } from '../context/NotificationContext';
 // import Navbar from '../components/Navbar';
 
 const Login = () => {
@@ -37,6 +38,7 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const theme = useTheme();
+  const { addNotification } = useNotifications();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -46,12 +48,15 @@ const Login = () => {
     try {
       const result = await login(email, password);
       if (result.success) {
+        addNotification({ message: 'Login successful!', severity: 'success' });
         navigate('/');
       } else {
         setError(result.message);
+        addNotification({ message: result.message || 'Login failed.', severity: 'error' });
       }
     } catch (err) {
       setError('Failed to login');
+      addNotification({ message: 'Failed to login', severity: 'error' });
     }
 
     setLoading(false);

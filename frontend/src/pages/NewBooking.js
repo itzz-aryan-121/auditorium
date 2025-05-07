@@ -31,6 +31,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { bookings } from '../services/api';
 import { format, parseISO } from 'date-fns';
+import { useNotifications } from '../context/NotificationContext';
 
 const NewBooking = () => {
   const navigate = useNavigate();
@@ -42,6 +43,7 @@ const NewBooking = () => {
   const [description, setDescription] = useState('');
   const [descriptionError, setDescriptionError] = useState('');
   const theme = useTheme();
+  const { addNotification } = useNotifications();
 
   useEffect(() => {
     if (!state) {
@@ -78,12 +80,14 @@ const NewBooking = () => {
 
       if (response.data) {
         setSuccess('Booking request submitted successfully! Admin will review your request.');
+        addNotification({ message: 'Booking request submitted!', severity: 'info' });
         setTimeout(() => {
           navigate('/my-bookings');
         }, 2000);
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to create booking');
+      addNotification({ message: err.response?.data?.message || 'Failed to create booking', severity: 'error' });
     } finally {
       setLoading(false);
     }

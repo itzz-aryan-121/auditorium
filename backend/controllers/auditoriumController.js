@@ -43,10 +43,11 @@ const getAvailability = async (req, res) => {
       return res.status(400).json({ message: 'Date is required' });
     }
 
-    // Get all bookings for the auditorium on the specified date
+    // Only consider bookings that are not rejected
     const bookings = await Booking.find({
       auditoriumId: id,
-      date: parseISO(date)
+      date: parseISO(date),
+      status: { $in: ['pending', 'approved'] }
     });
 
     // Generate all possible time slots (8am to 8pm, 1-hour blocks)

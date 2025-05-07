@@ -1,19 +1,36 @@
 import axios from 'axios';
 
+const API_URL = '/api';
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  },
+  withCredentials: true,
+  timeout: 10000
 });
 
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+// Add token to requests if it exists
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  console.log('Token from localStorage:', token ? 'exists' : 'not found');
+  
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+    // Ensure withCredentials is set for each request
+    config.withCredentials = true;
+    console.log('Request config:', {
+      headers: config.headers,
+      withCredentials: config.withCredentials
+    });
+  }
+  return config;
+}, (error) => {
+  console.error('Request interceptor error:', error);
+  return Promise.reject(error);
+});
 
 // Add response interceptor to handle common errors
 api.interceptors.response.use(
@@ -24,8 +41,11 @@ api.interceptors.response.use(
     if (error.response) {
       console.error('Error data:', error.response.data);
       console.error('Error status:', error.response.status);
+      console.error('Error headers:', error.response.headers);
+      console.error('Request config:', error.config);
     } else if (error.request) {
       console.error('No response received:', error.request);
+      console.error('Request config:', error.config);
     }
     return Promise.reject(error);
   }
@@ -49,7 +69,13 @@ export const bookings = {
   getAllBookings: (filters) => api.get('/bookings/admin/all', { params: filters }),
   updateStatus: (id, data) => {
     console.log(`Making PATCH request to: /bookings/admin/${id}/status with data:`, data);
-    return api.patch(`/bookings/admin/${id}/status`, data);
+    return api.patch(`/bookings/admin/${id}/status`, data, {
+      withCredentials: true,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    });
   }
 };
 
