@@ -1,29 +1,52 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Container, Typography, Avatar, TextField, Button, Paper, Divider, Snackbar, Alert } from '@mui/material';
-import api from '../services/api';
+import { Box, Container, Typography, Avatar, TextField, Button, Paper, Divider, Snackbar, Alert, CircularProgress } from '@mui/material';
+import { auth, upload } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useNotifications } from '../context/NotificationContext';
 
 const Profile = () => {
-  const { user, setUser } = useAuth();
+  const { user, updateUser } = useAuth();
+  const { addNotification } = useNotifications();
   const [name, setName] = useState(user?.name || '');
   const [profilePic, setProfilePic] = useState(user?.profilePic || '');
   const [profilePicFile, setProfilePicFile] = useState(null);
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     setName(user?.name || '');
     setProfilePic(user?.profilePic || '');
   }, [user]);
 
-  // Handle profile picture file upload (optional, fallback to URL)
-  const handleProfilePicChange = (e) => {
+  // Handle profile picture file upload
+  const handleProfilePicChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
       setProfilePicFile(file);
-      setProfilePic(URL.createObjectURL(file));
+      // Create a temporary URL for preview
+      const previewUrl = URL.createObjectURL(file);
+      setProfilePic(previewUrl);
+      
+      // Upload to Cloudinary
+      setUploading(true);
+      try {
+        const response = await upload.profilePic(file);
+        setProfilePic(response.url);
+        addNotification({ message: 'Profile picture uploaded successfully!', severity: 'success' });
+      } catch (err) {
+        console.error('Upload error:', err);
+        addNotification({ 
+          message: err.response?.data?.message || 'Failed to upload profile picture. Please try again.', 
+          severity: 'error' 
+        });
+        // Revert to previous profile picture
+        setProfilePic(user?.profilePic || '');
+      } finally {
+        setUploading(false);
+        setProfilePicFile(null);
+      }
     }
   };
 
@@ -32,15 +55,19 @@ const Profile = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      let profilePicUrl = profilePic;
-      // If file selected, upload to a file server or cloud (for now, just use URL.createObjectURL)
-      // In production, you would upload to S3, Cloudinary, etc.
-      // For now, we'll just use the preview URL or let user paste a URL
-      const res = await api.patch('/auth/me', { name, profilePic: profilePicUrl });
-      setUser((prev) => ({ ...prev, name: res.data.name, profilePic: res.data.profilePic }));
-      setSnackbar({ open: true, message: 'Profile updated!', severity: 'success' });
+      const response = await auth.updateProfile({ name, profilePic });
+      const updatedUser = response.data;
+      
+      // Update the user context with the new data
+      updateUser(updatedUser);
+      
+      addNotification({ message: 'Profile updated successfully!', severity: 'success' });
     } catch (err) {
-      setSnackbar({ open: true, message: err.response?.data?.message || 'Failed to update profile', severity: 'error' });
+      console.error('Profile update error:', err);
+      addNotification({ 
+        message: err.response?.data?.message || 'Failed to update profile. Please try again.', 
+        severity: 'error' 
+      });
     } finally {
       setLoading(false);
     }
@@ -49,14 +76,26 @@ const Profile = () => {
   // Change password
   const handleChangePassword = async (e) => {
     e.preventDefault();
+    if (newPassword.length < 6) {
+      addNotification({ 
+        message: 'New password must be at least 6 characters long', 
+        severity: 'error' 
+      });
+      return;
+    }
+    
     setLoading(true);
     try {
-      await api.patch('/auth/me/password', { oldPassword, newPassword });
-      setSnackbar({ open: true, message: 'Password updated!', severity: 'success' });
+      await auth.updatePassword({ oldPassword, newPassword });
+      addNotification({ message: 'Password updated successfully!', severity: 'success' });
       setOldPassword('');
       setNewPassword('');
     } catch (err) {
-      setSnackbar({ open: true, message: err.response?.data?.message || 'Failed to update password', severity: 'error' });
+      console.error('Password update error:', err);
+      addNotification({ 
+        message: err.response?.data?.message || 'Failed to update password. Please try again.', 
+        severity: 'error' 
+      });
     } finally {
       setLoading(false);
     }
@@ -68,28 +107,47 @@ const Profile = () => {
         <Typography variant="h4" fontWeight={700} gutterBottom>My Profile</Typography>
         <Divider sx={{ mb: 3 }} />
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-          <Avatar src={profilePic} sx={{ width: 96, height: 96, mb: 1 }} />
-          <Button variant="outlined" component="label" sx={{ mb: 1 }}>
-            Change Picture
-            <input type="file" accept="image/*" hidden onChange={handleProfilePicChange} />
-          </Button>
-          <TextField
-            label="Or paste image URL"
-            value={profilePic}
-            onChange={e => setProfilePic(e.target.value)}
-            fullWidth
-            size="small"
-            sx={{ mb: 2 }}
+          <Avatar 
+            src={profilePic} 
+            sx={{ 
+              width: 96, 
+              height: 96, 
+              mb: 1,
+              border: '2px solid',
+              borderColor: 'primary.main'
+            }} 
           />
+          <Button 
+            variant="outlined" 
+            component="label" 
+            sx={{ mb: 1 }}
+            disabled={loading || uploading}
+          >
+            {uploading ? <CircularProgress size={24} /> : 'Change Picture'}
+            <input 
+              type="file" 
+              accept="image/*" 
+              hidden 
+              onChange={handleProfilePicChange}
+              disabled={loading || uploading}
+            />
+          </Button>
           <TextField
             label="Name"
             value={name}
             onChange={e => setName(e.target.value)}
             fullWidth
             sx={{ mb: 2 }}
+            disabled={loading || uploading}
           />
-          <Button variant="contained" onClick={handleSaveProfile} disabled={loading} fullWidth sx={{ mb: 2 }}>
-            Save Profile
+          <Button 
+            variant="contained" 
+            onClick={handleSaveProfile} 
+            disabled={loading || uploading} 
+            fullWidth 
+            sx={{ mb: 2 }}
+          >
+            {loading ? <CircularProgress size={24} /> : 'Save Profile'}
           </Button>
         </Box>
         <Divider sx={{ my: 3 }} />
@@ -102,6 +160,7 @@ const Profile = () => {
             onChange={e => setOldPassword(e.target.value)}
             fullWidth
             required
+            disabled={loading || uploading}
           />
           <TextField
             label="New Password"
@@ -111,17 +170,19 @@ const Profile = () => {
             fullWidth
             required
             inputProps={{ minLength: 6 }}
+            disabled={loading || uploading}
           />
-          <Button type="submit" variant="contained" color="secondary" disabled={loading} fullWidth>
-            Change Password
+          <Button 
+            type="submit" 
+            variant="contained" 
+            color="secondary" 
+            disabled={loading || uploading} 
+            fullWidth
+          >
+            {loading ? <CircularProgress size={24} /> : 'Change Password'}
           </Button>
         </Box>
       </Paper>
-      <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
-        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%' }}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </Container>
   );
 };

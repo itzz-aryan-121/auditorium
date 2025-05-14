@@ -15,7 +15,8 @@ import {
   alpha,
   Divider,
   Fade,
-  CircularProgress
+  CircularProgress,
+  useMediaQuery
 } from '@mui/material';
 import {
   Email as EmailIcon,
@@ -67,161 +68,239 @@ const Login = () => {
   };
 
   return (
-    <Container maxWidth="sm">
-      {/* <Navbar /> */}
-      <Fade in timeout={800}>
-        <Box sx={{ mt: { xs: 6, md: 10 }, mb: 4 }}>
-          <Box sx={{ textAlign: 'center', mb: 4 }}>
-            <Box 
-              sx={{ 
-                display: 'inline-flex',
-                bgcolor: alpha(theme.palette.primary.main, 0.1),
-                p: 2,
-                borderRadius: '50%',
-                mb: 2
-              }}
-            >
-              <EventIcon fontSize="large" color="primary" />
+    <Box
+      sx={{
+        position: 'relative',
+        minHeight: '100vh',
+        width: '100vw',
+        overflow: 'hidden'
+      }}
+    >
+      {/* Video Background */}
+      <Box
+        sx={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: -1,
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            bgcolor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 1
+          }
+        }}
+      >
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover'
+          }}
+          src="/assets/home-banner.mp4"
+        >
+      
+        </video>
+      </Box>
+
+      <Container 
+        maxWidth="sm" 
+        sx={{ 
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          py: { xs: 4, sm: 6 },
+          position: 'relative',
+          zIndex: 1
+        }}
+      >
+        <Fade in timeout={800}>
+          <Box>
+            <Box sx={{ textAlign: 'center', mb: { xs: 3, sm: 4 } }}>
+              <Box 
+                sx={{ 
+                  display: 'inline-flex',
+                  bgcolor: alpha(theme.palette.primary.main, 0.1),
+                  p: { xs: 1.5, sm: 2 },
+                  borderRadius: '50%',
+                  mb: { xs: 1.5, sm: 2 }
+                }}
+              >
+                <EventIcon 
+                  sx={{ 
+                    fontSize: { xs: 32, sm: 40 },
+                    color: theme.palette.primary.main 
+                  }} 
+                />
+              </Box>
+              <Typography 
+                variant="h4" 
+                component="h1" 
+                gutterBottom 
+                sx={{ 
+                  fontWeight: 700,
+                  fontSize: { xs: '1.75rem', sm: '2rem', md: '2.25rem' },
+                  background: "linear-gradient(to right, red, #ffcccc, white);",
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  mb: 1,
+                  color: 'black'
+                }}
+              >
+                Welcome to AudiBook
+              </Typography>
+              <Typography 
+                variant="body1" 
+                sx={{ 
+                  fontSize: { xs: '0.875rem', sm: '1rem' },
+                  color: 'white'
+                }}
+              >
+                Sign in to access your account
+              </Typography>
             </Box>
-            <Typography 
-              variant="h4" 
-              component="h1" 
-              gutterBottom 
+            
+            <Card 
+              elevation={4} 
               sx={{ 
-                fontWeight: 700,
-                background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
+                borderRadius: { xs: 2, sm: 3 }, 
+                overflow: 'hidden',
+                backdropFilter: 'blur(10px)',
+                bgcolor: alpha(theme.palette.background.paper, 0.9)
               }}
             >
-              Welcome to AudiBook
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              Sign in to access your account
+              <Box sx={{ p: { xs: 3, md: 4 } }}>
+                {error && (
+                  <Alert 
+                    severity="error" 
+                    sx={{ mb: 3 }}
+                    onClose={() => setError('')}
+                  >
+                    {error}
+                  </Alert>
+                )}
+
+                <form onSubmit={handleSubmit}>
+                  <TextField
+                    label="Email"
+                    type="email"
+                    fullWidth
+                    margin="normal"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <EmailIcon color="primary" fontSize="small" />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{ mb: 2 }}
+                  />
+                  
+                  <TextField
+                    label="Password"
+                    type={showPassword ? 'text' : 'password'}
+                    fullWidth
+                    margin="normal"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <LockIcon color="primary" fontSize="small" />
+                        </InputAdornment>
+                      ),
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            onClick={toggleShowPassword}
+                            edge="end"
+                            size="small"
+                          >
+                            {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{ mb: 3 }}
+                  />
+
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    fullWidth
+                    size="large"
+                    disabled={loading}
+                    startIcon={loading ? null : <LoginIcon />}
+                    sx={{ 
+                      py: 1.2,
+                      position: 'relative',
+                      fontWeight: 600,
+                      fontSize: '1rem'
+                    }}
+                  >
+                    {loading ? 'Signing in...' : 'Sign In'}
+                    {loading && (
+                      <CircularProgress 
+                        size={24} 
+                        sx={{ 
+                          position: 'absolute',
+                          color: theme.palette.primary.light
+                        }}
+                      />
+                    )}
+                  </Button>
+                </form>
+                
+                <Divider sx={{ my: 3 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    OR
+                  </Typography>
+                </Divider>
+
+                <Box sx={{ textAlign: 'center' }}>
+                  <Typography variant="body2" sx={{ mb: 1 }}>
+                    Don't have an account?
+                  </Typography>
+                  <Button 
+                    component={Link} 
+                    to="/register" 
+                    variant="outlined" 
+                    fullWidth
+                    sx={{ fontWeight: 500 }}
+                  >
+                    Create Account
+                  </Button>
+                </Box>
+              </Box>
+            </Card>
+            
+            <Typography 
+              variant="body2" 
+              align="center" 
+              color="white" 
+              sx={{ mt: 3 }}
+            >
+              By signing in, you agree to our Terms and Privacy Policy
             </Typography>
           </Box>
-          
-          <Card elevation={4} sx={{ borderRadius: 3, overflow: 'hidden' }}>
-            <Box sx={{ p: { xs: 3, md: 4 } }}>
-              {error && (
-                <Alert 
-                  severity="error" 
-                  sx={{ mb: 3 }}
-                  onClose={() => setError('')}
-                >
-                  {error}
-                </Alert>
-              )}
-
-              <form onSubmit={handleSubmit}>
-                <TextField
-                  label="Email"
-                  type="email"
-                  fullWidth
-                  margin="normal"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <EmailIcon color="primary" fontSize="small" />
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{ mb: 2 }}
-                />
-                
-                <TextField
-                  label="Password"
-                  type={showPassword ? 'text' : 'password'}
-                  fullWidth
-                  margin="normal"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <LockIcon color="primary" fontSize="small" />
-                      </InputAdornment>
-                    ),
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          onClick={toggleShowPassword}
-                          edge="end"
-                          size="small"
-                        >
-                          {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{ mb: 3 }}
-                />
-
-                <Button
-                  type="submit"
-                  variant="contained"
-                  fullWidth
-                  size="large"
-                  disabled={loading}
-                  startIcon={loading ? null : <LoginIcon />}
-                  sx={{ 
-                    py: 1.2,
-                    position: 'relative',
-                    fontWeight: 600,
-                    fontSize: '1rem'
-                  }}
-                >
-                  {loading ? 'Signing in...' : 'Sign In'}
-                  {loading && (
-                    <CircularProgress 
-                      size={24} 
-                      sx={{ 
-                        position: 'absolute',
-                        color: theme.palette.primary.light
-                      }}
-                    />
-                  )}
-                </Button>
-              </form>
-              
-              <Divider sx={{ my: 3 }}>
-                <Typography variant="body2" color="text.secondary">
-                  OR
-                </Typography>
-              </Divider>
-
-              <Box sx={{ textAlign: 'center' }}>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  Don't have an account?
-                </Typography>
-                <Button 
-                  component={Link} 
-                  to="/register" 
-                  variant="outlined" 
-                  fullWidth
-                  sx={{ fontWeight: 500 }}
-                >
-                  Create Account
-                </Button>
-              </Box>
-            </Box>
-          </Card>
-          
-          <Typography 
-            variant="body2" 
-            align="center" 
-            color="text.secondary" 
-            sx={{ mt: 3 }}
-          >
-            By signing in, you agree to our Terms and Privacy Policy
-          </Typography>
-        </Box>
-      </Fade>
-    </Container>
+        </Fade>
+      </Container>
+    </Box>
   );
 };
 

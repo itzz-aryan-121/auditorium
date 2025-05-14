@@ -36,6 +36,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useThemeMode } from '../context/ThemeContext';
+import { useNotifications } from '../context/NotificationContext';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -48,6 +49,7 @@ const Navbar = () => {
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
   const [notificationAnchor, setNotificationAnchor] = useState(null);
   const { mode, toggleTheme } = useThemeMode();
+  const { addNotification } = useNotifications();
   
   // Handle scroll effect for navbar
   useEffect(() => {
@@ -89,6 +91,7 @@ const Navbar = () => {
 
   const handleLogout = () => {
     logout();
+    addNotification({ message: 'Logged out successfully', severity: 'info' });
     navigate('/login');
     handleMenuClose();
     handleUserMenuClose();

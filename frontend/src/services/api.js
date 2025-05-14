@@ -2,6 +2,11 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: '/api',
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  },
+  withCredentials: true
 });
 
 api.interceptors.request.use(
@@ -31,26 +36,41 @@ api.interceptors.response.use(
   }
 );
 
-export const auth = {
+const auth = {
   register: (userData) => api.post('/auth/register', userData),
-  login: (credentials) => api.post('/auth/login', credentials)
+  login: (credentials) => api.post('/auth/login', credentials),
+  updateProfile: (data) => api.patch('/auth/me', data),
+  updatePassword: (data) => api.patch('/auth/me/password', data)
 };
 
-export const auditoriums = {
+const auditoriums = {
   getAll: () => api.get('/auditoriums'),
   getAvailability: (id, date) => api.get(`/auditoriums/${id}/availability?date=${date}`)
 };
 
-export const bookings = {
+const bookings = {
   create: (bookingData) => api.post('/bookings', bookingData),
   getMyBookings: () => api.get('/bookings/me'),
   getBooking: (id) => api.get(`/bookings/${id}`),
   // Admin functions
   getAllBookings: (filters) => api.get('/bookings/admin/all', { params: filters }),
-  updateStatus: (id, data) => {
-    console.log(`Making PATCH request to: /bookings/admin/${id}/status with data:`, data);
-    return api.patch(`/bookings/admin/${id}/status`, data);
+  updateStatus: (id, data) => api.patch(`/bookings/admin/${id}/status`, data)
+};
+
+// Upload service
+const upload = {
+  profilePic: async (file) => {
+    const formData = new FormData();
+    formData.append('profilePic', file);
+    
+    const response = await api.post('/upload/profile', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
   }
 };
 
+export { auth, bookings, upload, auditoriums };
 export default api; 
